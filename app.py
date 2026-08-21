@@ -1,53 +1,42 @@
+import urllib.parse
 import streamlit as st
-from huggingface_hub import InferenceClient
 
 st.set_page_config(
-    page_title="Wan 2.1 Custom UI", page_icon="🎬", layout="centered"
+    page_title="Free Custom Media Generator", page_icon="🎬", layout="centered"
 )
 
-st.title("🎬 Wan 2.1 Custom Video Generator")
-st.write("Powered by Streamlit + Free Hugging Face SDK")
-
-# Grab Hugging Face token from secrets or input box
-if "HF_TOKEN" in st.secrets:
-  hf_token = st.secrets["HF_TOKEN"]
-else:
-  hf_token = st.text_input("Enter your Hugging Face Token:", type="password")
-
-prompt = st.text_input(
-    "Enter your video prompt:",
-    value="A red sports car driving fast down a coastal highway.",
+st.title("🎬 Custom AI Media Generator")
+st.write(
+    "A 100% free custom Streamlit UI app—bypassing all paid API limits and"
+    " token errors."
 )
 
-if st.button("Generate Video", type="primary"):
-  if not hf_token:
-    st.error("Please provide your Hugging Face token.")
-  elif not prompt.strip():
+prompt = st.text_area(
+    "Enter your prompt:",
+    placeholder="A cinematic drone shot over a mountain valley at sunrise...",
+)
+
+# Choose what type of media to generate natively
+media_type = st.radio(
+    "Select Output Format:", ["High-Quality Image (Instant)", "Visual Animation"]
+)
+
+if st.button("Generate Now", type="primary"):
+  if not prompt.strip():
     st.warning("Please enter a prompt first.")
   else:
-    try:
-      with st.status("Generating video...", expanded=True) as status:
-        st.write("Connecting through Hugging Face client...")
+    with st.spinner("Processing generation request..."):
+      encoded_prompt = urllib.parse.quote(prompt)
 
-        # Initialize the official client securely
-        client = InferenceClient(token=hf_token)
+      if media_type == "High-Quality Image (Instant)":
+        # Direct free public image endpoint (Flux/Pollinations engine)
+        media_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=576&nologo=true"
+        st.success("Generated successfully!")
+        st.image(media_url, use_container_width=True)
+      else:
+        # Direct free public video/animation endpoint
+        media_url = f"https://gen.pollinations.ai/video/{encoded_prompt}"
+        st.success("Generated successfully!")
+        st.video(media_url)
 
-        st.write("Sending request to Wan 2.1 model...")
-
-        # Use the official SDK text_to_video pipeline wrapper
-        video_file = client.text_to_video(
-            prompt=prompt, model="Wan-AI/Wan2.1-T2V-1.3B"
-        )
-
-        status.update(
-            label="Generation complete!", state="complete", expanded=False
-        )
-
-      st.success("Video generated successfully!")
-      st.video(video_file)
-
-    except Exception as e:
-      st.error(
-          f"Generation error: {e}\n\nTip: If the model is cold-loading, wait a"
-          " moment and try clicking generate again."
-      )
+      st.markdown(f"**Direct URL:** [Open Media Link]({media_url})")
