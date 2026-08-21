@@ -1,29 +1,29 @@
 import os
+import requests
 import streamlit as st
-from huggingface_hub import InferenceClient
 
 st.set_page_config(
     page_title="Wan 2.1 Custom UI", page_icon="🎬", layout="centered"
 )
 
 st.title("🎬 Wan 2.1 Custom Video Generator")
-st.write("Hosted on Streamlit Cloud & powered by free open-weights APIs.")
+st.write("Hosted on Streamlit Cloud & powered by free Hugging Face inference.")
 
-# Grab free Hugging Face token from Streamlit secrets or user input
+# Grab Hugging Face token
 if "HF_TOKEN" in st.secrets:
   hf_token = st.secrets["HF_TOKEN"]
 else:
-  hf_token = st.text_input("Enter your free Hugging Face Token:", type="password")
+  hf_token = st.text_input("Enter your Hugging Face Token:", type="password")
 
 prompt = st.text_area(
     "Enter your video prompt:",
-    placeholder="A cinematic drone shot over a mountain...",
+    placeholder="A red sports car driving fast down a coastal highway.",
 )
 
 if st.button("Generate Video", type="primary"):
   if not hf_token:
     st.error(
-        "Please provide a free Hugging Face token (get one at"
+        "Please provide a valid Hugging Face token (get one at"
         " hf.co/settings/tokens)."
     )
   elif not prompt.strip():
@@ -31,30 +31,32 @@ if st.button("Generate Video", type="primary"):
   else:
     try:
       with st.status(
-          "Connecting to open-source inference provider...", expanded=True
+          "Sending request to Hugging Face serverless API...", expanded=True
       ) as status:
-        st.write("Initializing client...")
+        # Direct REST API call to the open-weights model router
+        API_URL = "https://api-inference.huggingface.co/models/Wan-AI/Wan2.1-T2V-1.3B"
+        headers = {"Authorization": f"Bearer {hf_token}"}
 
-        # Initialize the Hugging Face inference client
-        client = InferenceClient(token=hf_token)
-
-        st.write("Sending generation request for Wan 2.1...")
-
-        # Call the open-weights Wan model via HF inference routing
-        # (Using the community-hosted efficient 1.3B or standard text-to-video space/endpoint)
-        video_output = client.text_to_video(
-            prompt=prompt, model="Wan-AI/Wan2.1-T2V-1.3B"
+        st.write("Submitting prompt payload...")
+        response = requests.post(
+            API_URL, headers=headers, json={"inputs": prompt}
         )
+
+        if response.status_code != 200:
+          raise Exception(
+              f"API Error [{response.status_code}]: {response.text}"
+          )
 
         status.update(
             label="Generation complete!", state="complete", expanded=False
         )
 
       st.success("Video generated successfully!")
-      st.video(video_output)
+      # If the model returns raw video bytes:
+      st.video(response.content)
 
     except Exception as e:
       st.error(
-          f"An error occurred. Note: Heavy models may require a free HF Pro"
-          f" trial or a warm-up state if the endpoint is cold. Details: {e}"
+          f"An error occurred. Note: If the model is cold-loading, wait a"
+          f" minute and try again. Details: {e}"
       )
