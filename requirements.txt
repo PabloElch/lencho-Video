@@ -1,3 +1,8 @@
 streamlit
-requests
-replicate
+torch
+torchvision
+diffusers
+transformers
+accelerate
+sentencepiece
+imageio[ffmpeg]
