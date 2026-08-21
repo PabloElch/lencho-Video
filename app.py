@@ -1,5 +1,4 @@
-import time
-import requests
+import fal_client
 import streamlit as st
 
 st.set_page_config(
@@ -7,47 +6,61 @@ st.set_page_config(
 )
 
 st.title("🎬 Wan 2.1 AI Video Generator")
-st.write(
-    "Generate high-quality open-source AI videos seamlessly using a lightweight"
-    " Streamlit frontend."
-)
+st.write("Powered by Streamlit Cloud + Fal.ai Serverless Inference")
 
-# Input prompt from user
+# Securely grab your API key from Streamlit secrets, or input it directly for testing
+if "FAL_KEY" in st.secrets:
+  fal_key = st.secrets["FAL_KEY"]
+else:
+  fal_key = st.text_input("Enter your Fal.ai API Key:", type="password")
+
+# User inputs
 prompt = st.text_area(
     "Enter your video prompt:",
     placeholder=(
-        "A stylish woman walks down a Tokyo street filled with warm glowing"
-        " neon..."
+        "A cinematic drone shot sweeping over a misty green valley at sunrise..."
     ),
 )
-
-# Resolution selection
 resolution = st.selectbox("Select Resolution", ["480p", "720p"])
 
 if st.button("Generate Video", type="primary"):
-  if not prompt.strip():
-    st.warning("Please enter a prompt first.")
+  if not fal_key:
+    st.error("Please provide a Fal.ai API key to continue.")
+  elif not prompt.strip():
+    st.warning("Please enter a video prompt first.")
   else:
-    with st.status(
-        "Initializing video generation pipeline...", expanded=True
-    ) as status:
-      st.write("Connecting to cloud inference endpoint...")
-      time.sleep(1.5)
+    # Temporarily set the key for the fal client SDK
+    import os
 
-      st.write("Submitting generation task for Wan 2.1...")
-      # Placeholder for actual API integration call (e.g., Fal.ai or Replicate wrapper)
-      # response = requests.post("YOUR_API_ENDPOINT", json={"prompt": prompt, "resolution": resolution})
+    os.environ["FAL_KEY"] = fal_key
 
-      status.update(
-          label="Generation complete! Rendering video...",
-          state="complete",
-          expanded=False,
-      )
+    try:
+      with st.status(
+          "Queuing job with Wan 2.1 (this takes about 1 minute)...",
+          expanded=True,
+      ) as status:
+        st.write("Sending prompt to serverless cluster...")
 
-    # Display placeholder or resulting video stream
-    st.success("Video generated successfully!")
-    # st.video(result_video_url)
-    st.info(
-        "To make this fully functional, plug your free API endpoint keys into"
-        " the code block above."
-    )
+        # Call the Wan 2.1 Text-to-Video endpoint on Fal.ai
+        # Reference: https://fal.ai/models/fal-ai/wan-t2v
+        result = fal_client.subscribe(
+            "fal-ai/wan-t2v",
+            arguments={"prompt": prompt, "resolution": resolution},
+            on_queue_update=lambda update: st.write(f"Queue status..."),
+        )
+
+        status.update(
+            label="Video generation complete!", state="complete", expanded=False
+        )
+
+      # Extract and display the video URL returned from the cloud
+      if "video" in result and "url" in result["video"]:
+        video_url = result["video"]["url"]
+        st.success("Success!")
+        st.video(video_url)
+        st.markdown(f"[Download Video]({video_url})")
+      else:
+        st.error("Generation finished, but no video URL was returned.")
+
+    except Exception as e:
+        st.error(f"An error occurred during generation: {e}")
