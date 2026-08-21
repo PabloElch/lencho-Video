@@ -375,7 +375,7 @@ st.markdown("<hr style='margin-top:12px; margin-bottom:20px; border-color:#29292
 # ============================================================
 # APP TABS SETUP
 # ============================================================
-tab_image, tab_audio = st.tabs(["🎨 AI Image Studio (Flux)", "🎙️ AI Audio Studio (Kokoro)"])
+tab_image, tab_audio = st.tabs(["🎨 Lenchxos Image Generator ", "🎙️ Lenchxos Voice over "])
 
 # ============================================================
 # TAB 1: POLLINATIONS AI IMAGE STUDIO
@@ -482,7 +482,7 @@ with tab_audio:
         script_text = st.text_area(
             "Script Content",
             value="",
-            placeholder="Type or paste your multi-paragraph article, story, or long-form script here...",
+            placeholder="Type or paste your long-form script here...",
             height=230,
             label_visibility="collapsed",
             key="audio_script_input"
