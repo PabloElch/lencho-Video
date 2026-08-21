@@ -1,8 +1,8 @@
 streamlit
-torch
-torchvision
-diffusers
-transformers
-accelerate
-sentencepiece
-imageio[ffmpeg]
+kokoro-onnx
+onnxruntime
+soundfile
+numpy
+imageio-ffmpeg
+streamlit
+requests
