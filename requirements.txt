@@ -1,3 +1,2 @@
 streamlit
 huggingface_hub
-requests
